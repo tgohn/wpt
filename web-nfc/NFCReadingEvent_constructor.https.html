@@ -33,6 +33,24 @@
 
   test(() => {
     const message = createMessage([createJsonRecord(test_json_data)]);
+    const event = new NFCReadingEvent('type', {serialNumber: null, message: message});
+    assert_equals(event.serialNumber, '', 'serialNumber');
+  }, 'NFCReadingEvent constructor with null serialNumber');
+
+  test(() => {
+    const message = createMessage([createJsonRecord(test_json_data)]);
+    const event = new NFCReadingEvent('type', {message: message});
+    assert_equals(event.serialNumber, '', 'serialNumber');
+  }, 'NFCReadingEvent constructor with serialNumber not present');
+
+  test(() => {
+    const event = new NFCReadingEvent('type', {serialNumber: '', message: null});
+    assert_true(event.message.records === undefined);
+    assert_true(event.message.url === undefined);
+  }, 'NFCReadingEvent constructor with null message');
+
+  test(() => {
+    const message = createMessage([createJsonRecord(test_json_data)]);
     const event = new NFCReadingEvent('type', {serialNumber: '', message: message});
     assert_equals(event.type, 'type', 'type');
     assert_equals(event.serialNumber, '', 'serialNumber');
