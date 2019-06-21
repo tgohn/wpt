@@ -25,16 +25,13 @@
         { entryType: "measure", name: "measure5", detail: null, startTime: 0 },
         { entryType: "measure", name: "measure6", detail: null, startTime: timeStamp1 },
         { entryType: "measure", name: "measure7", detail: null, startTime: timeStamp1, duration: timeStamp2 - timeStamp1 },
-        { entryType: "measure", name: "measure8", detail: null, startTime: 0 },
-        { entryType: "measure", name: "measure9", detail: null, startTime: 0 },
-        { entryType: "measure", name: "measure10", detail: null, startTime: timeStamp1 },
-        { entryType: "measure", name: "measure11", detail: null, startTime: timeStamp3 },
-        { entryType: "measure", name: "measure12", detail: null, startTime: 0 },
-        { entryType: "measure", name: "measure13", detail: null, startTime: 0 },
-        { entryType: "measure", name: "measure14", detail: null, startTime: timeStamp3, duration: timeStamp1 - timeStamp3 },
-        { entryType: "measure", name: "measure15", detail: null, startTime: timeStamp1, duration: timeStamp2 - timeStamp1 },
-        { entryType: "measure", name: "measure16", detail: null, startTime: timeStamp1 },
-        { entryType: "measure", name: "measure17", detail: { customInfo: 159 }, startTime: timeStamp3, duration: timeStamp2 - timeStamp3 }];
+        { entryType: "measure", name: "measure8", detail: null, startTime: timeStamp1 },
+        { entryType: "measure", name: "measure9", detail: null, startTime: timeStamp3 },
+        { entryType: "measure", name: "measure10", detail: null, startTime: 0 },
+        { entryType: "measure", name: "measure11", detail: null, startTime: timeStamp3, duration: timeStamp1 - timeStamp3 },
+        { entryType: "measure", name: "measure12", detail: null, startTime: timeStamp1, duration: timeStamp2 - timeStamp1 },
+        { entryType: "measure", name: "measure13", detail: null, startTime: timeStamp1 },
+        { entryType: "measure", name: "measure14", detail: { customInfo: 159 }, startTime: timeStamp3, duration: timeStamp2 - timeStamp3 }];
     const observer = new PerformanceObserver(
         t.step_func(function (entryList, obs) {
           measureEntries =
@@ -62,25 +59,19 @@
     returnedEntries.push(
         self.performance.measure("measure7", 'mark1', 'mark2'));
     returnedEntries.push(
-        self.performance.measure("measure8", {}));
+        self.performance.measure("measure8", { start: 'mark1' }));
     returnedEntries.push(
-        self.performance.measure("measure9", { start: undefined }));
+        self.performance.measure("measure9", { start: timeStamp3 }));
     returnedEntries.push(
-        self.performance.measure("measure10", { start: 'mark1' }));
+        self.performance.measure("measure10", { end: 'mark1' }));
     returnedEntries.push(
-        self.performance.measure("measure11", { start: timeStamp3 }));
+        self.performance.measure("measure11", { start: timeStamp3, end: 'mark1' }));
     returnedEntries.push(
-        self.performance.measure("measure12", { end: undefined }));
+        self.performance.measure("measure12", { start: timeStamp1, end: timeStamp2, detail: undefined }));
     returnedEntries.push(
-        self.performance.measure("measure13", { end: 'mark1' }));
+        self.performance.measure("measure13", { start: 'mark1', end: undefined, detail: null }));
     returnedEntries.push(
-        self.performance.measure("measure14", { start: timeStamp3, end: 'mark1' }));
-    returnedEntries.push(
-        self.performance.measure("measure15", { start: timeStamp1, end: timeStamp2, detail: undefined }));
-    returnedEntries.push(
-        self.performance.measure("measure16", { start: 'mark1', end: undefined, detail: null }));
-    returnedEntries.push(
-        self.performance.measure("measure17", { start: timeStamp3, end: 'mark2', detail: { customInfo: 159 }}));
+        self.performance.measure("measure14", { start: timeStamp3, end: 'mark2', detail: { customInfo: 159 }}));
     checkEntries(returnedEntries, expectedEntries);
   }, "measure entries' detail and start/end are customizable");
 
@@ -90,10 +81,10 @@
       self.performance.measure("wrongUsage1", {}, 12);
     }, "measure should throw a TypeError when passed an options object and an end time");
     assert_throws(new TypeError(), function() {
-      self.performance.measure("wrongUsage2", {'startTime': 2}, 12);
+      self.performance.measure("wrongUsage2", {'start': 2}, 12);
     }, "measure should throw a TypeError when passed an options object and an end time");
     assert_throws(new TypeError(), function() {
-      self.performance.measure("wrongUsage3", {'startTime': 2}, 'mark1');
+      self.performance.measure("wrongUsage3", {'start': 2}, 'mark1');
     }, "measure should throw a TypeError when passed an options object and an end mark");
   }, "measure should throw a TypeError when passed an invalid argument combination");
 </script>
