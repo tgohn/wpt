@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<head>
+  <title>Iframes with loading='lazy' load when in the viewport</title>
+  <link rel="author" title="Scott Little" href="mailto:sclittle@chromium.org">
+  <link rel="help" href="https://github.com/scott-little/lazyload">
+  <script src="/resources/testharness.js"></script>
+  <script src="/resources/testharnessreport.js"></script>
+</head>
+
+<!--
+Marked as tentative until https://github.com/whatwg/html/pull/3752 is landed.
+-->
+
+<body>
+  <iframe id="in_viewport" src="resources/same-origin-subframe.html?first" loading="lazy" width="200px" height="100px">
+  </iframe>
+  <div style="height:10000px;"></div>
+  <iframe id="below_viewport" src="resources/same-origin-subframe.html?second" loading="lazy" width="200px" height="100px">
+  </iframe>
+
+  <!--
+    This async script loads very slowly in order to ensure that, if the
+    below_viewport element has started loading, it has a chance to finish
+    loading before window.load() happens, so that the test will dependably fail
+    in that case instead of potentially passing depending on how long different
+    resource fetches take.
+  -->
+  <script async src="/common/slow.py"></script>
+</body>
+
+<script>
+  let t = async_test("Test that iframes with loading='lazy' load once they enter the viewport.");
+
+  let has_window_loaded = false;
+  let has_in_viewport_element_loaded = false;
+
+  let has_in_viewport_subframe_window_loaded = false;
+  let in_viewport_frame = document.getElementById("in_viewport");
+  in_viewport_frame.testOnSubframeWindowLoad = function() {
+    assert_false(has_window_loaded);
+    assert_false(has_in_viewport_element_loaded);
+    assert_false(has_in_viewport_subframe_window_loaded);
+    has_in_viewport_subframe_window_loaded = true;
+  };
+  in_viewport_frame.addEventListener("load", t.step_func(function() {
+    assert_false(has_window_loaded);
+    assert_false(has_in_viewport_element_loaded);
+    assert_true(has_in_viewport_subframe_window_loaded);
+    has_in_viewport_element_loaded = true;
+  }));
+
+  window.addEventListener("load", t.step_func(function() {
+    assert_false(has_window_loaded);
+    assert_true(has_in_viewport_element_loaded);
+    has_window_loaded = true;
+    document.getElementById("below_viewport").scrollIntoView();
+  }));
+
+  let has_below_viewport_subframe_window_loaded = false;
+  let below_viewport_frame = document.getElementById("below_viewport");
+  below_viewport_frame.testOnSubframeWindowLoad = function() {
+    assert_true(has_window_loaded);
+    assert_true(has_in_viewport_element_loaded);
+    assert_false(has_below_viewport_subframe_window_loaded);
+    has_below_viewport_subframe_window_loaded = true;
+  };
+  below_viewport_frame.addEventListener("load", t.step_func_done(function() {
+    assert_true(has_window_loaded);
+    assert_true(has_in_viewport_element_loaded);
+    assert_true(has_below_viewport_subframe_window_loaded);
+  }));
+</script>
