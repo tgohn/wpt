@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<script src=/resources/testharness.js></script>
+<script src=/resources/testharnessreport.js></script>
+<script src=/fetch/sec-metadata/resources/helper.js></script>
+<script>
+
+var remaining_tests = []
+function start_next_test() {
+  if (remaining_tests.length != 0) {
+    const next_test_starter = remaining_tests.pop();
+    next_test_starter();
+  }
+}
+window.addEventListener('load', start_next_test);
+
+function add_test(description, report_host, go_back_host, expectations) {
+  remaining_tests.push(() => {
+    // Summary of test steps within each test:
+    // STEP1. Create a subframe: report_host/post-to-owner.py
+    // STEP2. Verify that the subframe navigation used the correct
+    //        Sec-Fetch-Site and other Sec-... headers.
+    // STEP3. Navigate the subframe to go_back_host/empty.html
+    // STEP4. Call history.back()
+    // STEP5. Verify that the history navigation used the correct
+    //        Sec-Fetch-Site and other Sec-... headers.
+    // STEP6. Finish the test.
+    async_test(t => {
+      const iframe = document.createElement('iframe');
+
+      var msg_counter = 0;
+      window.addEventListener('message', t.step_func(e => {
+        if (e.source != iframe.contentWindow)
+          return;
+        msg_counter = msg_counter + 1;
+        if (msg_counter == 1) {
+          // STEP2: Verify the headers.
+          expectations.user = "";
+          assert_header_equals(e.data, expectations);
+        } else if (msg_counter == 2) {
+          // STEP5: Verify the headers.
+          expectations.user = "?1";
+          assert_header_equals(e.data, expectations);
+
+          // STEP6: Finish the test.
+
+          // Start the next test before calling |t.done()| - otherwise
+          // the harness won't wait for the next test to finish.
+          start_next_test();
+
+          // Finish the test.
+          t.done();
+        }
+      }));
+
+      var load_counter = 0;
+      iframe.onload = t.step_func(e => {
+        load_counter = load_counter + 1;
+        if (load_counter == 1) { // Loaded post-to-owner.py 1st time.
+          // step_timeout is needed to ensure |history.length > 1| during STEP4
+          // (without setTimeout setting |iframe.src| below would be treated as
+          // a client redirect and would replace the current history entry,
+          // instead of creating a new history entry).
+          t.step_timeout(() => {
+            // STEP3: Go to empty.html.
+            const url_suffix = '/fetch/sec-metadata/resources/empty.html'
+            const url = `https://${go_back_host}${url_suffix}`;
+            iframe.src = url;
+          });
+        } else if (load_counter == 2) { // Loaded empty.html.
+          // STEP4: Go back to post-to-owner.py.
+          assert_greater_than(history.length, 1, 'history.length at STEP4');
+          history.back();
+        }
+      });
+
+      // STEP1: Navigate the frame to post-to-owner.py
+      const url_suffix = '/fetch/sec-metadata/resources/post-to-owner.py'
+      const url = `https://${report_host}${url_suffix}`;
+      iframe.src = url;
+      document.body.appendChild(iframe);
+    }, description);
+  });
+}
+
+const same_origin_host = "{{host}}:{{ports[https][0]}}";
+const same_site_host = "{{hosts[][www]}}:{{ports[https][0]}}";
+const cross_site_host = "{{hosts[alt][www]}}:{{ports[https][0]}}";
+
+add_test(
+  "back to same-origin-initiated navigation",
+  same_origin_host,  // report_host
+  cross_site_host,  // go_back_host
+  { "dest": "nested-document",
+    "site": "same-origin",
+    "user": "varies between 1st and 2nd navigation",
+    "mode": "nested-navigate" });
+
+add_test(
+  "back to same-site-initiated navigation",
+  same_site_host,  // report_host
+  cross_site_host,  // go_back_host
+  { "dest": "nested-document",
+    "site": "same-site",
+    "user": "varies between 1st and 2nd navigation",
+    "mode": "nested-navigate" });
+
+add_test(
+  "back to cross-site-initiated navigation",
+  cross_site_host,  // report_host
+  cross_site_host,  // go_back_host
+  { "dest": "nested-document",
+    "site": "cross-site",
+    "user": "varies between 1st and 2nd navigation",
+    "mode": "nested-navigate" });
+
+</script>
