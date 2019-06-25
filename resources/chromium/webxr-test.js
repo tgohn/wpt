@@ -102,7 +102,10 @@ class MockVRService {
       }
 
       // If there were no successful results, returns a null session.
-      return {session: null};
+      return {
+          session: null,
+          err: device.mojom.RequestSessionError.UNKNOWN_RUNTIME_ERROR
+      };
     });
   }
 
