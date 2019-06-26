@@ -1,14 +1,10 @@
 <!DOCTYPE HTML>
 <meta charset=utf-8>
-<title>Largest Contentful Paint: observe image.</title>
+<title>Largest Contentful Paint: observe cross-origin images but without startTime.</title>
 <body>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <script>
-  let beforeRender;
-  function computeTimestamp() {
-    beforeRender = performance.now();
-  }
   async_test(function (t) {
     if (!window.LargestContentfulPaint) {
       assert_unreached("LargestContentfulPaint is not implemented");
@@ -18,15 +14,12 @@
         assert_equals(entryList.getEntries().length, 1);
         const entry = entryList.getEntries()[0];
         assert_equals(entry.entryType, 'largestContentfulPaint');
-        assert_greater_than_equal(entry.startTime, beforeRender);
-        assert_greater_than_equal(performance.now(), entry.startTime);
+        assert_equals(entry.startTime, 0, 'The startTime value should be 0 for a cross origin image.');
         assert_equals(entry.duration, 0);
         // blue.png is 133 x 106.
         assert_equals(entry.size, 14098);
         assert_equals(entry.id, 'image_id');
-        // 25 is the length of "largest-contentful-paint/".
-        const index = window.location.href.lastIndexOf('/') - 25;
-        const pathname = window.location.href.substring(0, index) + '/images/blue.png';
+        const pathname = 'http://{{domains[www]}}:{{ports[http][1]}}/images/blue.png';
         assert_equals(entry.url, pathname);
         assert_equals(entry.responseEnd,
             performance.getEntriesByName(pathname, 'resource')[0].responseEnd);
@@ -34,8 +27,8 @@
       })
     );
     observer.observe({type: 'largestContentfulPaint', buffered: true});
-  }, 'Same-origin image is observable.');
+  }, 'Cross-origin image is observable, with startTime equal to 0.');
 </script>
 
-<img src='/images/blue.png' id='image_id' onload='computeTimestamp()'/>
+<img src='http://{{domains[www]}}:{{ports[http][1]}}/images/blue.png' id='image_id'/>
 </body>
